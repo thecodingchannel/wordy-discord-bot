@@ -1,0 +1,9 @@
+{
+    "python.pythonPath": ".venv\\Scripts\\python.exe",
+    "cSpell.words": [
+        "disnake",
+        "dotenv",
+        "Wordle"
+    ],
+    "python.analysis.typeCheckingMode": "basic"
+}
