@@ -60,15 +60,7 @@ async def surrender_prefix(ctx: commands.Context):
 
 @bot.command(name='help', help="Get your stats")
 async def help_prefix(ctx: commands.Context):
-    description = HELP_TEXT_PRE
-
-    for lang in languages.values():
-        command = f"/{lang['command']} <guess>"
-        description += f"{command:<19} {lang['help']}\n"
-
-    description += HELP_TEXT_POST
-
-    await ctx.reply(description)
+    await handle_help(ctx.reply)
 
 @bot.command(name='stats', help="Get your stats")
 async def stats_prefix(ctx: commands.Context):
@@ -82,12 +74,28 @@ async def stats_prefix(ctx: commands.Context):
 async def surrender_slash(inter):
     await handle_surrender(inter.user, inter.response.send_message)
 
+@bot.slash_command(name='help', description="How to play Wordy")
+async def help_slash(inter):
+    await handle_help(inter.response.send_message)
+
 @bot.slash_command(name='stats', description="Get your stats")
 async def stats_slash(inter):
     await handle_stats(inter.user, inter.response.send_message)
 
 
 # Common functionality
+
+
+async def handle_help(reply: callable):
+    description = HELP_TEXT_PRE
+
+    for lang in languages.values():
+        command = f"/{lang['command']} <guess>"
+        description += f"{command:<19} {lang['help']}\n"
+
+    description += HELP_TEXT_POST
+
+    await reply(description)
 
 
 async def handle_stats(user: disnake.User|disnake.Member, reply: callable):
