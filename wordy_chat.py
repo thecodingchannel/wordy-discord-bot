@@ -2,57 +2,42 @@
 This part handles the game state management, with each user having their own active game.
 '''
 
-from typing import Optional
-
-from game_store import clear_game, fetch_stored_game, store_game
+from game_store import get_info_for_user, set_info_for_user
 from wordle_logic import evaluate_guess, generate_new_word
-from wordy_types import ActiveGame, EndResult, LetterState
+from wordy_types import ActiveGame, EndResult, LetterState, UserInfo
 
 
-def begin_game(user_id: int, lang: str) -> ActiveGame:
+def begin_game(player: UserInfo, lang: str) -> ActiveGame:
     """
     Begin a game for a user.
     """
+    if player.current_game:
+        raise ValueError("User already has an active game")
 
     # Select a word
     answer = generate_new_word(lang)
 
     # Create and store new game state
     new_game = ActiveGame(answer=answer, lang=lang)
-    store_game(user_id, new_game)
 
     return new_game
-
-
-def end_game(user_id: int) -> None:
-    """
-    End a game for a user.
-    """
-    clear_game(user_id)
-
-
-def get_game_for_user(user_id: int) -> Optional[ActiveGame]:
-    """
-    Fetch the game state for a user.
-    """
-    return fetch_stored_game(user_id)
 
 
 def enter_guess(guess: str, game: ActiveGame) -> EndResult:
     """
     Enter a guess for a user's game and reports back if the game ends.
 
-    >>> game=ActiveGame("en", "abcd")
+    >>> game=ActiveGame(lang="en", answer="abcd")
     >>> enter_guess("aaaa", game) == EndResult.PLAYING
     True
     >>> render_result(game.results[-1])
     '🟩⬛⬛⬛'
-    >>> game=ActiveGame("en", "abca")
+    >>> game=ActiveGame(lang="en", answer="abca")
     >>> enter_guess("aaaz", game) == EndResult.PLAYING
     True
     >>> render_result(game.results[-1])
     '🟩🟨⬛⬛'
-    >>> game=ActiveGame("en", "abca")
+    >>> game=ActiveGame(lang="en", answer="abca")
     >>> enter_guess("aaab", game) == EndResult.PLAYING
     True
     >>> render_result(game.results[-1])
@@ -77,43 +62,66 @@ def enter_guess(guess: str, game: ActiveGame) -> EndResult:
     return game.state
 
 
-def render_result(result: tuple[LetterState]) -> str:
+def get_emotes_for_colorblind(colorblind: bool) -> tuple[str, str, str]:
+    '''
+    Get the emotes for to use, based on whether colorblind mode is on or off.
+
+    Returns a tuple of the emotes for absent, present, and correct.
+    '''
+    if colorblind:
+        return '⬛', '🟦', '🟧'
+    else:
+        return '⬛', '🟨', '🟩'
+
+
+def render_result(result: tuple[LetterState], colorblind: bool = False) -> str:
     """
     Render a result to a string.
 
     >>> render_result((LetterState.ABSENT, LetterState.PRESENT, LetterState.CORRECT))
     '⬛🟨🟩'
+    >>> render_result((LetterState.ABSENT, LetterState.PRESENT, LetterState.CORRECT), True)
+    '⬛🟦🟧'
     >>> render_result((LetterState.ABSENT,)*4)
     '⬛⬛⬛⬛'
     """
+
+    absent, present, correct =  get_emotes_for_colorblind(colorblind)
+
     return "".join(
-        "⬛" if state == LetterState.ABSENT else
-        "🟨" if state == LetterState.PRESENT else "🟩"
+        absent if state == LetterState.ABSENT else
+        present if state == LetterState.PRESENT else correct
         for state in result
     )
 
 
 if __name__ == "__main__":
+    from game_store import write_to_disk
+
     # Quick chat emulator to test the game logic
     def handle_input(guess: str, user_id: int):
-        game = get_game_for_user(user_id)
-        if not game or game.state != EndResult.PLAYING:
+        player = get_info_for_user(user_id)
+
+        if not player.current_game or player.current_game.state != EndResult.PLAYING:
             print("Starting new game!")
-            game = begin_game(user_id, 'en')
+            player.current_game = begin_game(player, 'en')
 
-        enter_guess(guess, game)
+        enter_guess(guess, player.current_game)
 
-        for result,word in zip(game.results, game.board_state):
+        for result,word in zip(player.current_game.results, player.current_game.board_state):
             print(f"{render_result(result)} {word}")
 
-        if game.state == EndResult.WIN:
-            print(f"Congratulations! Completed in {len(game.board_state)} guesses!")
-        elif game.state == EndResult.LOSE:
-            print(f"Sorry, you lost. The answer was {game.answer}")
+        if player.current_game.state == EndResult.WIN:
+            print(f"Congratulations! Completed in {len(player.current_game.board_state)} guesses!")
+        elif player.current_game.state == EndResult.LOSE:
+            print(f"Sorry, you lost. The answer was {player.current_game.answer}")
 
-        if game.state != EndResult.PLAYING:
-            end_game(user_id)
+        if player.current_game.state != EndResult.PLAYING:
+            player.current_game = None
 
+        set_info_for_user(user_id, player)
+
+        write_to_disk()
 
     while True:
         guess = input("Guess: ")

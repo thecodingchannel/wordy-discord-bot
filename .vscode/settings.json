@@ -3,6 +3,7 @@
     "cSpell.words": [
         "disnake",
         "dotenv",
+        "pydantic",
         "Wordle"
     ],
     "python.analysis.typeCheckingMode": "basic"
