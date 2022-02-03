@@ -201,6 +201,8 @@ async def handle_new_guess(guess: str, lang: str, user: disnake.User|disnake.Mem
     if not guess:
         await reply(f"To play Wordy simply type `/wordy <guess>` to start or continue your own personal game.")
         return
+
+    guess = guess.lower()
     if len(guess) != 5:
         await reply("Guess must be 5 letters long")
         return

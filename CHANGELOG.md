@@ -20,3 +20,8 @@ All notable changes to this project will be documented in this file.
 - Changed database from Notion to a local json file
 - Changed dependencies - removed `notion-client` and added `pydantic`
 
+## Version [2.1.0] - 2022-02-03
+
+### Fixed
+
+- Now converts upper-case letters to lower-case
