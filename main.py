@@ -203,6 +203,7 @@ async def handle_new_guess(guess: str, lang: str, user: disnake.User|disnake.Mem
         return
 
     guess = guess.lower()
+    guess = guess.removeprefix('guess:')
     if len(guess) != 5:
         await reply("Guess must be 5 letters long")
         return

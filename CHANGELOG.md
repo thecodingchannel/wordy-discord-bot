@@ -25,3 +25,9 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - Now converts upper-case letters to lower-case
+
+## Version [2.2.0] - 2022-02-03
+
+### Fixed
+
+- Handle odd cases where Discord sends `guess:xxxxx`
